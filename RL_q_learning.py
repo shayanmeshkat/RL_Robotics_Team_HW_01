@@ -8,6 +8,7 @@ import save_results
 from param_study import run_parameter_study, plot_parameter_curves, plot_final_performance_comparison
 from opt_policy_vis import extract_optimal_policy, print_optimal_policy
 from policy_animation import animate_optimal_policy, create_policy_visualization, simulate_test_episode
+from q_val_plot import plot_q_values
 import os
 
 training_data_file_name = './Results/base_training_data'
@@ -19,12 +20,12 @@ testing_data_file_name = './Results/base_testing_data'
 alpha = 0.01  # learning rate
 gamma = 0.9  # discount factor
 epsilon = 0.1  # exploration rate
-max_steps = 80  # maximum steps per episode
+max_steps = 50  # maximum steps per episode
 training_episodes = 5000  # Reduced for parameter study
 total_test_episode = 1000
-testing_frequency = 100
+testing_frequency = 10
 test_episodes = int(total_test_episode / ((training_episodes - testing_frequency)//testing_frequency + 1))
-num_time = 5  # Reduced for parameter study
+num_time = 1  # Reduced for parameter study
 
 # Parameter study ranges - increased differences for clearer effects
 alpha_values = [0.01, 0.1, 0.5, 0.9]
@@ -78,7 +79,7 @@ def q_learning(alpha, gamma, epsilon, max_steps, episodes):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -1:  # If all rewards obtained, break
+            if reward == 1 or reward == -100:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
@@ -113,7 +114,7 @@ def test_policy(q_values, test_episodes, max_steps):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -1:  # If all rewards obtained, break
+            if reward == 1 or reward == -100:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
@@ -145,6 +146,10 @@ for iter in range(num_time):
     env_temp.map()
     optimal_policy = extract_optimal_policy(q_values, env_temp)
     print_optimal_policy(optimal_policy, env_temp)
+    
+    # Plot Q-values at the end of each iteration
+    print(f"Creating Q-values visualization for iteration {iter + 1}...")
+    plot_q_values(q_values, env_temp, iteration=iter + 1)
     
     # Create training animations and visualizations
     print(f"Creating training animation for iteration {iter + 1}...")

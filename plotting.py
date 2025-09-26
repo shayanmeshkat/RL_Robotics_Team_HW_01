@@ -13,7 +13,7 @@ df = pd.read_parquet('./base_testing_data.parquet')
 # df_base = pd.read_parquet('QAS_Sink_State_15k.parquet')
 
 
-window_size = 20
+window_size = 10
 iters_num = df.columns.__len__()
 iters_num = 5
 
@@ -69,6 +69,7 @@ plt.grid(which='minor', linestyle=':', linewidth='0.5', color='gray')
 plt.minorticks_on()
 plt.xlabel('Episode')
 plt.ylabel('Discounted Cumulative Reward')
+plt.ylim(-2, 1)
 plt.title('Training and Testing Reward per Episode')
 plt.legend()
 plt.savefig('agent_reward.pdf', format="pdf",
