@@ -177,7 +177,7 @@ def plot_q_values(q_values, env_instance, iteration=None, save_path="./Results")
     # Save the plot with high DPI for presentation
     filepath = os.path.join(save_path, filename)
     plt.savefig(filepath, dpi=300, bbox_inches='tight')
-    # plt.show()
+    plt.show()
 
 
 

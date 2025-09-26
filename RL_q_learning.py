@@ -20,7 +20,7 @@ testing_data_file_name = './Results/base_testing_data'
 alpha = 0.01  # learning rate
 gamma = 0.9  # discount factor
 epsilon = 0.1  # exploration rate
-max_steps = 50  # maximum steps per episode
+max_steps = 80  # maximum steps per episode
 training_episodes = 5000  # Reduced for parameter study
 total_test_episode = 1000
 testing_frequency = 10
@@ -79,7 +79,7 @@ def q_learning(alpha, gamma, epsilon, max_steps, episodes):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -100:  # If all rewards obtained, break
+            if reward == 1 or reward == -1:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
@@ -114,7 +114,7 @@ def test_policy(q_values, test_episodes, max_steps):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -100:  # If all rewards obtained, break
+            if reward == 1 or reward == -1:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
