@@ -1,3 +1,16 @@
+# Configure display first before any other imports
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+import display_config
+
+# Parse command line arguments
+show_plots, save_plots, interactive = display_config.parse_args()
+display_config.configure_display(show_plots, save_plots, interactive)
+
+import matplotlib
+# Backend already configured by display_config
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -7,7 +20,7 @@ import environment as env
 import save_results
 from param_study import run_parameter_study, plot_parameter_curves, plot_final_performance_comparison
 from opt_policy_vis import extract_optimal_policy, print_optimal_policy
-from policy_animation import animate_optimal_policy, create_policy_visualization, simulate_test_episode
+from policy_animation import animate_optimal_policy, simulate_test_episode
 from q_val_plot import plot_q_values
 import os
 
@@ -25,7 +38,7 @@ training_episodes = 5000  # Reduced for parameter study
 total_test_episode = 1000
 testing_frequency = 10
 test_episodes = int(total_test_episode / ((training_episodes - testing_frequency)//testing_frequency + 1))
-num_time = 1  # Reduced for parameter study
+num_time = 3  # Reduced for parameter study
 
 # Parameter study ranges - increased differences for clearer effects
 alpha_values = [0.01, 0.1, 0.5, 0.9]
@@ -66,7 +79,7 @@ def q_learning(alpha, gamma, epsilon, max_steps, episodes):
 
             next_state_x, next_state_y = env_instance.execute_action(state_x, state_y, action)
 
-            reward = env_instance.get_reward()
+            reward, terminal_condition = env_instance.get_reward()
             # event = env_instance.get_true_propositions(step)
             # rm_next_state = rm.get_next_state(rm_state, event)
             # reward_rm = rm.get_reward(rm_state, rm_next_state)
@@ -79,7 +92,7 @@ def q_learning(alpha, gamma, epsilon, max_steps, episodes):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -1:  # If all rewards obtained, break
+            if terminal_condition:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
@@ -103,7 +116,7 @@ def test_policy(q_values, test_episodes, max_steps):
 
             next_state_x, next_state_y = env_instance.execute_action(state_x, state_y, action)
             
-            reward = env_instance.get_reward()
+            reward, terminal_condition = env_instance.get_reward()
             
             reward_rm_sum += reward
 
@@ -114,7 +127,7 @@ def test_policy(q_values, test_episodes, max_steps):
             state_x = next_state_x
             state_y = next_state_y
 
-            if reward == 1 or reward == -1:  # If all rewards obtained, break
+            if terminal_condition:  # If all rewards obtained, break
                 break
 
         rewards_per_episode.append(total_reward)
@@ -154,7 +167,6 @@ for iter in range(num_time):
     # Create training animations and visualizations
     print(f"Creating training animation for iteration {iter + 1}...")
     agent_path, rewards_path = animate_optimal_policy(q_values, env_temp, iter + 1, is_test=False)
-    create_policy_visualization(q_values, env_temp, iter + 1, is_test=False)
     
     print(f"Training - Agent path: {agent_path}")
     print(f"Training - Total reward for path: {sum(rewards_path[1:]):.3f}")  # Exclude initial 0
@@ -209,7 +221,7 @@ for iter in range(num_time):
         if frame < len(test_agent_path):
             agent_x, agent_y = test_agent_path[frame]
             agent_circle = plt.Circle((agent_x + 0.5, agent_y + 0.5), 0.3, 
-                                     color='blue', linewidth=3, edgecolor='navy')
+                                     facecolor='blue', edgecolor='navy', linewidth=3)
             ax.add_patch(agent_circle)
             ax.text(agent_x + 0.5, agent_y + 0.5, 'A', ha='center', va='center', 
                     color='white', fontsize=12, fontweight='bold')
@@ -235,17 +247,33 @@ for iter in range(num_time):
                    bbox=dict(boxstyle="round,pad=0.3", facecolor="orange", alpha=0.7),
                    verticalalignment='top')
     
-    # Create and save testing animation
-    test_anim = animation.FuncAnimation(fig, animate_test_frame, frames=len(test_agent_path), 
-                                       interval=800, repeat=True, blit=False)
+    # Create and save testing animation with better error handling
+    show_plots_flag, save_plots_flag, interactive_mode = display_config.get_visualization_flags()
     
-    test_filename = f"./Results/testing_episode_animation_iter_{iter + 1}.gif"
-    test_anim.save(test_filename, writer='pillow', fps=1.2)
-    plt.close()
+    try:
+        test_anim = animation.FuncAnimation(fig, animate_test_frame, frames=len(test_agent_path), 
+                                           interval=800, repeat=True, blit=False)
+        
+        if save_plots_flag:
+            test_filename = f"./Results/testing_episode_animation_iter_{iter + 1}.gif"
+            test_anim.save(test_filename, writer='pillow', fps=1.2)
+            print(f"Testing animation saved as {test_filename}")
+        
+        if show_plots_flag:
+            plt.show()
+            if interactive_mode:
+                input("Press Enter to continue...")
+                
+    except Exception as e:
+        print(f"Warning: Could not create testing animation - {e}")
+        if save_plots_flag:
+            test_filename = f"./Results/testing_episode_animation_iter_{iter + 1}_failed.txt"
+            with open(test_filename, 'w') as f:
+                f.write(f"Testing animation creation failed: {e}")
+    finally:
+        if not show_plots_flag:
+            plt.close()
     
-    create_policy_visualization(q_values, env_temp, iter + 1, is_test=True)
-    
-    print(f"Testing animation saved as {test_filename}")
     print(f"Testing - Agent path: {test_agent_path}")
     print(f"Testing - Total reward for path: {sum(test_rewards_path[1:]):.3f}")  # Exclude initial 0
     
@@ -266,6 +294,10 @@ rolling_mean_test = pd.Series(test_rewards).rolling(window=rolling_mean_window).
 rew = np.array(rolling_mean.fillna(0))
 rew_test = np.array(rolling_mean_test.fillna(0))
 
+# Plot the training rewards with visualization flags
+show_plots_flag, save_plots_flag, interactive_mode = display_config.get_visualization_flags()
+
+plt.figure(figsize=(10, 6))
 plt.plot(range(len(rolling_mean)), rew,
          label=f'Rolling Mean (window={rolling_mean_window})',
          color='blue')
@@ -274,21 +306,50 @@ plt.ylabel('Cumulative Reward')
 plt.title('Reward per Episode')
 plt.legend()
 plt.grid('minor')
-plt.show()
 
-# Plot the testing rewards
+if save_plots_flag:
+    plt.savefig('./Results/training_rewards.png', dpi=300, bbox_inches='tight')
+    print("Training rewards plot saved to ./Results/training_rewards.png")
+
+if show_plots_flag:
+    plt.show()
+    if interactive_mode:
+        input("Press Enter to continue...")
+
+if not show_plots_flag:
+    plt.close()
+
+# Plot the testing rewards with visualization flags
+plt.figure(figsize=(10, 6))
 plt.plot(range(len(rolling_mean_test)), rew_test, label='Testing Rewards', color='red')
 plt.xlabel('Test Run')
 plt.ylabel('Average Reward')
 plt.title('Average Testing Reward per Run')
 plt.legend()
 plt.grid('minor')
-plt.show()
 
+if save_plots_flag:
+    plt.savefig('./Results/testing_rewards.png', dpi=300, bbox_inches='tight')
+    print("Testing rewards plot saved to ./Results/testing_rewards.png")
 
+if show_plots_flag:
+    plt.show()
+    if interactive_mode:
+        input("Press Enter to continue...")
+
+if not show_plots_flag:
+    plt.close()
+
+if save_plots_flag:
+    print("All plots saved to ./Results/")
+if show_plots_flag:
+    print("All plots displayed")
 
 # Run parameter study
 # print("Starting Parameter Study...")
+# alpha_curves, gamma_curves, epsilon_curves = run_parameter_study(alpha_values, gamma_values, epsilon_values, training_episodes, testing_frequency, test_episodes, max_steps, num_time, q_values, epsilon, alpha, gamma, grid_x, grid_y, num_actions)
+# plot_parameter_curves(alpha_curves, gamma_curves, epsilon_curves)
+# plot_final_performance_comparison(alpha_curves, gamma_curves, epsilon_curves)
 # alpha_curves, gamma_curves, epsilon_curves = run_parameter_study(alpha_values, gamma_values, epsilon_values, training_episodes, testing_frequency, test_episodes, max_steps, num_time, q_values, epsilon, alpha, gamma, grid_x, grid_y, num_actions)
 # plot_parameter_curves(alpha_curves, gamma_curves, epsilon_curves)
 # plot_final_performance_comparison(alpha_curves, gamma_curves, epsilon_curves)

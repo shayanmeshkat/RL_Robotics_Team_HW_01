@@ -1,7 +1,10 @@
+import matplotlib
+# Don't set backend here - let display_config handle it
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
+import display_config
 
 def plot_q_values(q_values, env_instance, iteration=None, save_path="./Results"):
     """
@@ -13,8 +16,11 @@ def plot_q_values(q_values, env_instance, iteration=None, save_path="./Results")
         iteration: iteration number for filename
         save_path: directory to save the plot
     """
+    show_plots, save_plots, interactive_mode = display_config.get_visualization_flags()
+    
     # Ensure save directory exists
-    os.makedirs(save_path, exist_ok=True)
+    if save_plots:
+        os.makedirs(save_path, exist_ok=True)
     
     # Create figure with larger size for presentation
     fig, ax = plt.subplots(figsize=(16, 12))
@@ -174,10 +180,19 @@ def plot_q_values(q_values, env_instance, iteration=None, save_path="./Results")
     
     plt.tight_layout()
     
-    # Save the plot with high DPI for presentation
-    filepath = os.path.join(save_path, filename)
-    plt.savefig(filepath, dpi=300, bbox_inches='tight')
-    plt.show()
+    # Handle saving and showing based on flags
+    if save_plots:
+        filepath = os.path.join(save_path, filename)
+        plt.savefig(filepath, dpi=300, bbox_inches='tight')
+        print(f"Q-values plot saved as {filepath}")
+    
+    if show_plots:
+        plt.show()
+        if interactive_mode:
+            input("Press Enter to continue...")
+    
+    if not show_plots:
+        plt.close()
 
 
 

@@ -72,13 +72,15 @@ class env():
         #     reward = 1
         # elif self.agent in self.objects[1]:
         #     reward = -1
-
+        terminal = False
         if self.agent in self.goal_locations:
             reward = 1
+            terminal = True
         elif self.agent in self.penalty_locations:
             reward = -1
+            terminal = True
 
-        return reward
+        return reward, terminal
 
     def map(self):
         self.objects = {}
