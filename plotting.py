@@ -15,7 +15,7 @@ df = pd.read_parquet('./base_testing_data.parquet')
 
 window_size = 10
 iters_num = df.columns.__len__()
-iters_num = 5
+iters_num = 3
 
 
 agent_iter_list = []

@@ -292,7 +292,7 @@ def play():
     
     while True:
         # Display current state
-        current_reward = game.get_reward()
+        current_reward, _ = game.get_reward()
         visualize_environment(game, current_reward, total_reward=game_state['total_reward'])
         
         # Check for terminal conditions
@@ -339,7 +339,7 @@ def play():
             intended_action = str_to_action[a]
             old_pos = game.agent
             new_x, new_y = game.execute_action(game.agent[0], game.agent[1], intended_action)
-            reward = game.get_reward()
+            reward, _ = game.get_reward()
             game_state['total_reward'] += reward
             game_state['step_count'] += 1
             
