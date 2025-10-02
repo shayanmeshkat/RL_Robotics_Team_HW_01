@@ -31,14 +31,14 @@ testing_data_file_name = './Results/base_testing_data'
 
 # Set the hyperparameters
 alpha = 0.01  # learning rate
-gamma = 0.9  # discount factor
-epsilon = 0.1  # exploration rate
+gamma = 0.95  # discount factor
+epsilon = 0.05  # exploration rate
 max_steps = 80  # maximum steps per episode
 training_episodes = 5000  # Reduced for parameter study
-total_test_episode = 1000
-testing_frequency = 10
+total_test_episode = 2000
+testing_frequency = 100
 test_episodes = int(total_test_episode / ((training_episodes - testing_frequency)//testing_frequency + 1))
-num_time = 3  # Reduced for parameter study
+num_time = 5  # Reduced for parameter study
 
 # Parameter study ranges - increased differences for clearer effects
 alpha_values = [0.01, 0.1, 0.5, 0.9]

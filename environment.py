@@ -25,23 +25,32 @@ class env():
         self.agent = (0,0)
         self.actions_num = 4
     
-
     
     def execute_action(self, state_x, state_y, action):
         
         x, y = state_x, state_y
         
-        # Implement slip: 80% intended, 10% left, 10% right
+        # Implement slip: 80% intended, 10% perpendicular left, 10% perpendicular right
         rand = np.random.rand()
+        
+        # Define perpendicular actions for each direction
+        # Format: action -> (left_perpendicular, right_perpendicular)
+        perpendicular_map = {
+            ActionsNew.up.value: (ActionsNew.left.value, ActionsNew.right.value),
+            ActionsNew.down.value: (ActionsNew.right.value, ActionsNew.left.value),
+            ActionsNew.left.value: (ActionsNew.down.value, ActionsNew.up.value),
+            ActionsNew.right.value: (ActionsNew.up.value, ActionsNew.down.value)
+        }
+        
         if rand < 0.8:
-            # Execute intended action
+            # Execute intended action (80%)
             actual_action = action
         elif rand < 0.9:
-            # Slip to left action
-            actual_action = ActionsNew.left.value
+            # Slip perpendicular to the left (10%)
+            actual_action = perpendicular_map[action][0]
         else:
-            # Slip to right action
-            actual_action = ActionsNew.right.value
+            # Slip perpendicular to the right (10%)
+            actual_action = perpendicular_map[action][1]
         
         action_ = ActionsNew(actual_action)
         # print('action in execute action is:', action_)
@@ -77,7 +86,7 @@ class env():
             reward = 1
             terminal = True
         elif self.agent in self.penalty_locations:
-            reward = -1
+            reward = -200
             terminal = True
 
         return reward, terminal
